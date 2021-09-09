@@ -1,0 +1,12 @@
+Package: DeliveryMan
+Type: Package
+Title: Delivery Man
+Version: 1.2.0
+Author: Mike Ashcroft
+Maintainer: Andreina Francisco <maria.andreina.francisco@farmbio.uu.se>
+Description: Code for the Delivery Man project in the Uppsala University AI course.
+License: What license is it under?
+Encoding: UTF-8
+RoxygenNote: 7.1.1
+NeedsCompilation: no
+Packaged: 2021-08-26 12:45:07 UTC; andreina

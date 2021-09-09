@@ -1,0 +1,10 @@
+const credentials = require('../data/credentials.json')
+const nodemailer = require('nodemailer');
+
+let transporter = nodemailer.createTransport( {
+    service: "Gmail",
+    auth: {
+        user: credentials.mail.user,
+        pass: credentials.mail.password
+    }
+})
