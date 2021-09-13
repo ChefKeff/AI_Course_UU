@@ -4,10 +4,6 @@
 # Load the library
 library("DeliveryMan")
 
-# Read documentation
-# ?runDeliveryman
-# ?testDM
-
 myFunctionAss <- function(trafficMatrix, carInfo, packageMatrix) {
   print(packageMatrix)
   print(trafficMatrix)
@@ -23,9 +19,27 @@ myFunctionAss <- function(trafficMatrix, carInfo, packageMatrix) {
         nextPackCoord <- c(packageMatrix[i,1], packageMatrix[i,2])
       }
     }
+    if(carInfo$x == nextPackCoord[[1]] && carInfo$y == nextPackCoord[[2]]) {
+      carInfo$nextMove = 5
+      return(carInfo)
+    }
     print(mdToNextPack)
     print(nextPackCoord)
-    carInfo$nextMove <- (a_star(trafficMatrix, nextPackCoord, calcHeurMatrix(nextPackCoord, trafficMatrix), carInfo, packageMatrix))
+    frontier <- list(list(currPos = list(x = carInfo$x, y = carInfo$y), currCost = 0, pathSearched = list()))
+    spaceTheFinalFrontier <- a_star(frontier, trafficMatrix, nextPackCoord)
+    if(spaceTheFinalFrontier[[1]]$searchedPath[[1]]$y < carInfo$y){
+      carInfo$nextMove = 2
+    }
+    if(spaceTheFinalFrontier[[1]]$searchedPath[[1]]$y > carInfo$y){
+      carInfo$nextMove = 8
+    }
+    if(spaceTheFinalFrontier[[1]]$searchedPath[[1]]$x < carInfo$x){
+      carInfo$nextMove = 4
+    }
+    if(spaceTheFinalFrontier[[1]]$searchedPath[[1]]$x > carInfo$x){
+      carInfo$nextMove = 6
+    }
+    if(carInfo$x == nextPackCoord[[1]] && carInfo$y == nextPackCoord[[1]])
     return(carInfo)
   }
   else if (carInfo$load != 0) {
@@ -33,39 +47,78 @@ myFunctionAss <- function(trafficMatrix, carInfo, packageMatrix) {
     for(i in 1:nrow(packageMatrix)) {
       if (packageMatrix[i,5] == 1) {
         goalCoord <- c(packageMatrix[i,3], packageMatrix[i,4])
-        carInfo$nextMove <- (a_star(trafficMatrix, goalCoord, calcHeurMatrix(goalCoord, trafficMatrix), carInfo, packageMatrix))
-        return(carInfo)
+        frontier <- list(list(currPos = list(x = carInfo$x, y = carInfo$y), currCost = 0, pathSearched = list()))
+        spaceTheFinalFrontier <- a_star(frontier, trafficMatrix, goalCoord)
+        if(spaceTheFinalFrontier[[1]]$searchedPath[[1]]$y < carInfo$y){
+          carInfo$nextMove = 2
+        }
+        if(spaceTheFinalFrontier[[1]]$searchedPath[[1]]$y > carInfo$y){
+          carInfo$nextMove = 8
+        }
+        if(spaceTheFinalFrontier[[1]]$searchedPath[[1]]$x < carInfo$x){
+          carInfo$nextMove = 4
+        }
+        if(spaceTheFinalFrontier[[1]]$searchedPath[[1]]$x > carInfo$x){
+          carInfo$nextMove = 6
+        }
+        if(carInfo$x == nextPackCoord[[1]] && carInfo$y == nextPackCoord[[1]])
+          return(carInfo)
       }
     }
   }
 }
 
-a_star <- function(trafficMatrix, goalCoord, heurMatrix, carInfo, packageMatrix) {
-  frontier = list()
+a_star <- function(frontier, trafficMatrix, goalCoord) {
   priorityQ = list()
   bestWay = 100
   bestDir = 0
-  if (goalCoord[[1]] == carInfo$x && goalCoord[[2]] == carInfo$y) {
-    print("hellO!")
-    bestDir = 5
-    return(bestDir)
-  }
-    neighborUp = list(dir = 8, x = carInfo$x, y = carInfo$y + 1, f = heurMatrix[carInfo$x, carInfo$y+1] + trafficMatrix$vroads[carInfo$x, carInfo$y])
-    neighborDown = list(dir = 2, x = carInfo$x, y = carInfo$y - 1, f = heurMatrix[carInfo$x, carInfo$y-1] + trafficMatrix$vroads[carInfo$x, carInfo$y-1])
-    neighborRight = list(dir = 6, x = carInfo$x + 1, y = carInfo$y, f = heurMatrix[carInfo$x+1, carInfo$y] + trafficMatrix$hroads[carInfo$x, carInfo$y])
-    neighborLeft = list(dir = 4, x = carInfo$x - 1, y = carInfo$y, f = heurMatrix[carInfo$x-1, carInfo$y] + trafficMatrix$hroads[carInfo$x-1, carInfo$y])
-    neighborList = list(neighborUp, neighborDown, neighborRight, neighborLeft)
-    print(neighborList)
-    for(i in 1:length(neighborList)) {
-      if(neighborList[[i]]$x != 0 && neighborList[[i]]$y != 0){
-        if(neighborList[[i]]$f < bestWay){
-          bestWay = neighborList[[i]]$f
-          bestDir = neighborList[[i]]$dir
-        }
-      }
+  if (goalCoord[[1]] == frontier[[1]]$currPos$x) {
+    if(goalCoord[[2]] == frontier[[1]]$currPos$y){
+      return(frontier) 
     }
-  print(bestDir)
-  return(bestDir)
+  }
+  expPoint = frontier[[1]]$currPos
+  prevCost = frontier[[1]]$currCost
+  pathSearched = frontier[[1]]$pathSearched
+  heurMatrix = calcHeurMatrix(goalCoord, trafficMatrix)
+  frontier[[1]] <- NULL
+  if(expPoint$x < 10 && expPoint$y < 10){
+      frontier = expand(expPoint, list(x = expPoint$x, y = expPoint$y + 1), frontier, heurMatrix, trafficMatrix$vroads[expPoint$x, expPoint$y], prevCost, pathSearched)
+      frontier = expand(expPoint, list(x = expPoint$x, y = expPoint$y - 1), frontier, heurMatrix, trafficMatrix$vroads[expPoint$x, expPoint$y-1], prevCost, pathSearched)
+      frontier = expand(expPoint, list(x = expPoint$x + 1, y = expPoint$y), frontier,  heurMatrix, trafficMatrix$hroads[expPoint$x, expPoint$y], prevCost, pathSearched)
+      frontier = expand(expPoint, list(x = expPoint$x - 1, y = expPoint$y), frontier,  heurMatrix, trafficMatrix$hroads[expPoint$x-1, expPoint$y], prevCost, pathSearched)
+  }
+  if(expPoint$x == 10){
+    frontier = expand(expPoint, list(x = expPoint$x, y = expPoint$y + 1), frontier, heurMatrix, trafficMatrix$vroads[expPoint$x, expPoint$y], prevCost, patchSearched)
+    frontier = expand(expPoint, list(x = expPoint$x, y = expPoint$y - 1), frontier, heurMatrix, trafficMatrix$vroads[expPoint$x, expPoint$y-1], prevCost, patchSearched)
+  }
+  if(expPoint$y == 10){
+    frontier = expand(expPoint, list(x = expPoint$x + 1, y = expPoint$y), frontier,  heurMatrix, trafficMatrix$hroads[expPoint$x, expPoint$y], prevCost, patchSearched)
+    frontier = expand(expPoint, list(x = expPoint$x - 1, y = expPoint$y), frontier,  heurMatrix, trafficMatrix$hroads[expPoint$x-1, expPoint$y], prevCost, patchSearched)
+  }
+  return(a_star(frontier, trafficMatrix, goalCoord))
+}
+
+expand <- function(expPoint, addPoint, frontier, heurMatrix, cost, prevCost, pathSearched) {
+  if(addPoint$x > 0) {
+    if(addPoint$x < 11) {
+      if(addPoint$y > 0){
+        if(addPoint$y < 11){
+          newCost = cost + prevCost
+          newFrontierEl = list(list(currPos = addPoint, currCost = newCost, pathSearched = append(pathSearched, list(expPoint))))
+          for(i in 1:length(frontier)){
+            if(frontier[[i]]$currCost + heurMatrix[frontier[[i]]$currPos$x, frontier[[i]]$currPos$y] < newCost){
+              frontier = append(frontier, list(newFrontierEl), after = 1-i)
+            }
+          }
+        }
+        return(frontier)
+      }
+      return(frontier)
+    }
+    return(frontier)
+  }
+  return(frontier)
 }
 
 # function som beräknar heur-avstånd från alla noder till målet
@@ -76,7 +129,6 @@ calcHeurMatrix <- function(goalCoord, trafficMatrix) {
       heurMat[x,y] = calcMD(x,y,goalCoord[[1]], goalCoord[[2]])
     }
   }
-  print(heurMat)
   return(heurMat)
 }
 
