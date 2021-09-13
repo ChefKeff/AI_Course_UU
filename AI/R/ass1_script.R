@@ -33,6 +33,10 @@ myFunctionAss <- function(trafficMatrix, carInfo, packageMatrix) {
       carInfo$nextMove = 6
       return(carInfo)
     }
+    if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$x == carInfo$x && spaceTheFinalFrontier[[1]]$pathSearched[[1]]$y == carInfo$y){
+      carInfo$nextMove = 5
+      return(carInfo)
+    }
   }
   else if (carInfo$load != 0) {
     for(i in 1:nrow(packageMatrix)) {
@@ -68,7 +72,7 @@ a_star <- function(frontier, trafficMatrix, goalCoord, heurMatrix) {
   if (goalCoord$x == frontier[[1]]$currPos$x && goalCoord$y == frontier[[1]]$currPos$y) {
       return(frontier) 
   }
-  if(length(frontier[[1]]$pathSearched) > 100){
+  if(length(frontier) > 100){
     return(frontier)
   }
   expPoint = frontier[[1]]$currPos
