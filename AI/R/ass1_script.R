@@ -15,8 +15,8 @@ myFunctionAss <- function(trafficMatrix, carInfo, packageMatrix) {
         return(carInfo)
       }
     }
-    frontier <- list(list(currPos = list(x = carInfo$x, y = carInfo$y), currCost = 0, pathSearched = list()))
-    spaceTheFinalFrontier <- a_star(frontier, trafficMatrix, nextPackCoord)
+    frontier = list(list(currPos = list(x = carInfo$x, y = carInfo$y), currCost = 0, pathSearched = list()))
+    spaceTheFinalFrontier <- a_star(frontier, trafficMatrix, nextPackCoord, calcHeurMatrix(nextPackCoord, trafficMatrix))
     if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$y < carInfo$y){
       carInfo$nextMove = 2
       return(carInfo)
@@ -43,7 +43,7 @@ myFunctionAss <- function(trafficMatrix, carInfo, packageMatrix) {
           return(carInfo)
         }
         frontier <- list(list(currPos = list(x = carInfo$x, y = carInfo$y), currCost = 0, pathSearched = list()))
-        spaceTheFinalFrontier <- a_star(frontier, trafficMatrix, goalCoord)
+        spaceTheFinalFrontier <- a_star(frontier, trafficMatrix, goalCoord, calcHeurMatrix(goalCoord, trafficMatrix))
         if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$y < carInfo$y){
           carInfo$nextMove = 2
           return(carInfo)
@@ -64,11 +64,13 @@ myFunctionAss <- function(trafficMatrix, carInfo, packageMatrix) {
     }
   }
 }
-a_star <- function(frontier, trafficMatrix, goalCoord) {
+a_star <- function(frontier, trafficMatrix, goalCoord, heurMatrix) {
   if (goalCoord$x == frontier[[1]]$currPos$x && goalCoord$y == frontier[[1]]$currPos$y) {
       return(frontier) 
   }
-  heurMatrix <- calcHeurMatrix(goalCoord, trafficMatrix)
+  if(length(frontier[[1]]$pathSearched) > 100){
+    return(frontier)
+  }
   expPoint = frontier[[1]]$currPos
   prevCost = frontier[[1]]$currCost
   pathSearched = frontier[[1]]$pathSearched
@@ -85,7 +87,7 @@ a_star <- function(frontier, trafficMatrix, goalCoord) {
   if(expPoint$y < 10) {
     frontier = expand(expPoint, list(x = expPoint$x, y = expPoint$y + 1), frontier, heurMatrix, trafficMatrix$vroads[expPoint$x, expPoint$y], prevCost, pathSearched)
   }
-  return(a_star(frontier, trafficMatrix, goalCoord))
+  return(a_star(frontier, trafficMatrix, goalCoord, heurMatrix))
 }
 expand <- function(expPoint, addPoint, frontier, heurMatrix, cost, prevCost, pathSearched) {
   if(addPoint$x > 0) {
