@@ -1,5 +1,5 @@
 library("DeliveryMan")
-myFunctionAss <- function(trafficMatrix, carInfo, packageMatrix) {
+myFunction <- function(trafficMatrix, carInfo, packageMatrix) {
   mdToNextPack = 100
   if(carInfo$load == 0) {
     for(i in 1:nrow(packageMatrix)) {
@@ -9,33 +9,26 @@ myFunctionAss <- function(trafficMatrix, carInfo, packageMatrix) {
         nextPackCoord <- list(x = packageMatrix[i,1], y = packageMatrix[i,2])
       }
     }
-    if(carInfo$x == nextPackCoord$x) {
-      if(carInfo$y == nextPackCoord$y){
+    if(carInfo$x == nextPackCoord$x & carInfo$y == nextPackCoord$y) {
         carInfo$nextMove = 5
         return(carInfo)
-      }
     }
     frontier = list(list(currPos = list(x = carInfo$x, y = carInfo$y), currCost = 0, pathSearched = list()))
     spaceTheFinalFrontier <- a_star(frontier, trafficMatrix, nextPackCoord, calcHeurMatrix(nextPackCoord, trafficMatrix))
     if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$y < carInfo$y){
       carInfo$nextMove = 2
-      return(carInfo)
     }
     if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$y > carInfo$y){
       carInfo$nextMove = 8
-      return(carInfo)
     }
     if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$x < carInfo$x){
       carInfo$nextMove = 4
-      return(carInfo)
     }
     if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$x > carInfo$x){
       carInfo$nextMove = 6
-      return(carInfo)
     }
     if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$x == carInfo$x && spaceTheFinalFrontier[[1]]$pathSearched[[1]]$y == carInfo$y){
       carInfo$nextMove = 5
-      return(carInfo)
     }
   }
   else if (carInfo$load != 0) {
@@ -44,29 +37,25 @@ myFunctionAss <- function(trafficMatrix, carInfo, packageMatrix) {
         goalCoord <- list(x = packageMatrix[i,3], y = packageMatrix[i,4])
         if(carInfo$x == goalCoord$x && carInfo$y == goalCoord$y) {
           carInfo$nextMove = 5
-          return(carInfo)
         }
         frontier <- list(list(currPos = list(x = carInfo$x, y = carInfo$y), currCost = 0, pathSearched = list()))
         spaceTheFinalFrontier <- a_star(frontier, trafficMatrix, goalCoord, calcHeurMatrix(goalCoord, trafficMatrix))
         if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$y < carInfo$y){
           carInfo$nextMove = 2
-          return(carInfo)
         }
         if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$y > carInfo$y){
           carInfo$nextMove = 8
-          return(carInfo)
         }
         if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$x < carInfo$x){
           carInfo$nextMove = 4
-          return(carInfo)
         }
         if(spaceTheFinalFrontier[[1]]$pathSearched[[1]]$x > carInfo$x){
           carInfo$nextMove = 6
-          return(carInfo)
         }
       }
     }
   }
+  return(carInfo)
 }
 
 a_star <- function(frontier, trafficMatrix, goalCoord, heurMatrix) {
@@ -92,12 +81,12 @@ expand <- function(expPoint, addPoint, frontier, heurMatrix, cost, prevCost, pat
       if(length(frontier) == 0){
         frontier[[1]] = newFrontierEl
       }
-      else if(frontier[[length(frontier)]]$currCost + heurMatrix[frontier[[length(frontier)]]$currPos$x, frontier[[length(frontier)]]$currPos$y] < newCost + heurMatrix[addPoint$x, addPoint$y]){
+      else if(frontier[[length(frontier)]]$currCost + heurMatrix[frontier[[length(frontier)]]$currPos$x, frontier[[length(frontier)]]$currPos$y]*2 < newCost + heurMatrix[addPoint$x, addPoint$y]*2){
         frontier[[length(frontier)+1]] = newFrontierEl
       }
       else {
         for(i in 1:length(frontier)) {
-          if(newCost + heurMatrix[addPoint$x, addPoint$y] <= frontier[[i]]$currCost + heurMatrix[frontier[[i]]$currPos$x, frontier[[i]]$currPos$y]) {
+          if(newCost + heurMatrix[addPoint$x, addPoint$y]*2 <= frontier[[i]]$currCost + heurMatrix[frontier[[i]]$currPos$x, frontier[[i]]$currPos$y]*2) {
             frontier = append(frontier, list(newFrontierEl), after = i-1)
             break
           }
