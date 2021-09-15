@@ -68,60 +68,52 @@ myFunctionAss <- function(trafficMatrix, carInfo, packageMatrix) {
     }
   }
 }
+
 a_star <- function(frontier, trafficMatrix, goalCoord, heurMatrix) {
   if (goalCoord$x == frontier[[1]]$currPos$x && goalCoord$y == frontier[[1]]$currPos$y) {
-      return(frontier) 
-  }
-  if(length(frontier) > 100){
     return(frontier)
   }
   expPoint = frontier[[1]]$currPos
   prevCost = frontier[[1]]$currCost
   pathSearched = frontier[[1]]$pathSearched
   frontier[[1]] <- NULL
-  if(expPoint$x > 1) {
-    frontier = expand(expPoint, list(x = expPoint$x - 1, y = expPoint$y), frontier,  heurMatrix, trafficMatrix$hroads[expPoint$x-1, expPoint$y], prevCost, pathSearched)
-  }
-  if(expPoint$x < 10) {
-    frontier = expand(expPoint, list(x = expPoint$x + 1, y = expPoint$y), frontier,  heurMatrix, trafficMatrix$hroads[expPoint$x, expPoint$y], prevCost, pathSearched)
-  }
-  if(expPoint$y > 1) {
-    frontier = expand(expPoint, list(x = expPoint$x, y = expPoint$y - 1), frontier, heurMatrix, trafficMatrix$vroads[expPoint$x, expPoint$y-1], prevCost, pathSearched)
-  }
-  if(expPoint$y < 10) {
-    frontier = expand(expPoint, list(x = expPoint$x, y = expPoint$y + 1), frontier, heurMatrix, trafficMatrix$vroads[expPoint$x, expPoint$y], prevCost, pathSearched)
-  }
+  frontier = expand(expPoint, list(x = expPoint$x - 1, y = expPoint$y), frontier,  heurMatrix, trafficMatrix$hroads[expPoint$x-1, expPoint$y], prevCost, pathSearched)
+  frontier = expand(expPoint, list(x = expPoint$x + 1, y = expPoint$y), frontier,  heurMatrix, trafficMatrix$hroads[expPoint$x, expPoint$y], prevCost, pathSearched)
+  frontier = expand(expPoint, list(x = expPoint$x, y = expPoint$y - 1), frontier, heurMatrix, trafficMatrix$vroads[expPoint$x, expPoint$y-1], prevCost, pathSearched)
+  frontier = expand(expPoint, list(x = expPoint$x, y = expPoint$y + 1), frontier, heurMatrix, trafficMatrix$vroads[expPoint$x, expPoint$y], prevCost, pathSearched)
   return(a_star(frontier, trafficMatrix, goalCoord, heurMatrix))
 }
+
 expand <- function(expPoint, addPoint, frontier, heurMatrix, cost, prevCost, pathSearched) {
-  if(addPoint$x > 0) {
-    if(addPoint$x < 11) {
-      if(addPoint$y > 0){
-        if(addPoint$y < 11){
-          newCost = cost + prevCost
-          newFrontierEl = list(currPos = addPoint, currCost = newCost, pathSearched = append(pathSearched, list(addPoint)))
-          if(length(frontier) == 0){
-            frontier = append(frontier, list(newFrontierEl))
-            return(frontier)
+  if(addPoint$x > 0 & addPoint$x < 11) {
+    if(addPoint$y > 0 & addPoint$y < 11){
+      newCost = cost + prevCost
+      newFrontierEl = list(currPos = addPoint, currCost = newCost, pathSearched = append(pathSearched, list(addPoint)))
+      if(length(frontier) == 0){
+        frontier[[1]] = newFrontierEl
+      }
+      else if(frontier[[length(frontier)]]$currCost + heurMatrix[frontier[[length(frontier)]]$currPos$x, frontier[[length(frontier)]]$currPos$y] < newCost + heurMatrix[addPoint$x, addPoint$y]){
+        frontier[[length(frontier)+1]] = newFrontierEl
+      }
+      else {
+        for(i in 1:length(frontier)) {
+          if(newCost + heurMatrix[addPoint$x, addPoint$y] <= frontier[[i]]$currCost + heurMatrix[frontier[[i]]$currPos$x, frontier[[i]]$currPos$y]) {
+            frontier = append(frontier, list(newFrontierEl), after = i-1)
+            break
           }
-          for(i in 1:length(frontier)){
-            if(!(frontier[[i]]$currCost + heurMatrix[frontier[[i]]$currPos$x, frontier[[i]]$currPos$y] < newCost + heurMatrix[addPoint$x, addPoint$y])){
-              frontier = append(frontier, list(newFrontierEl), after = i-1)
-              return(frontier)
-            }
-            else if(frontier[[i]]$currCost + heurMatrix[frontier[[i]]$currPos$x, frontier[[i]]$currPos$y] == newCost + heurMatrix[addPoint$x, addPoint$y]) {
-              frontier = append(frontier, list(newFrontierEl), after = i)
-              return(frontier)
-            }
-            else {
-              frontier = append(frontier, list(newFrontierEl))
-              return(frontier)
-            }
-            return(frontier)
-          }
-          return(frontier)
         }
-        return(frontier)
+      }
+      samePoint = FALSE
+      for(i in 1:length(frontier)){
+        if(frontier[[i]]$currPos$x == addPoint$x & frontier[[i]]$currPos$y == addPoint$y){
+          if(!samePoint){
+            samePoint = TRUE
+          }
+          else {
+            frontier[[i]] <- NULL
+            break
+          }
+        }
       }
       return(frontier)
     }
@@ -129,6 +121,7 @@ expand <- function(expPoint, addPoint, frontier, heurMatrix, cost, prevCost, pat
   }
   return(frontier)
 }
+
 calcHeurMatrix <- function(goalCoord, trafficMatrix) {
   heurMat = matrix(nrow = nrow(trafficMatrix$vroads), ncol = ncol(trafficMatrix$hroads))
   for (x in 1:ncol(trafficMatrix$hroads)) {
@@ -138,6 +131,7 @@ calcHeurMatrix <- function(goalCoord, trafficMatrix) {
   }
   return(heurMat)
 }
+
 calcMD <- function(startPosX, startPosY, goalX, goalY) {
   goalXY <- c(goalX, goalY)
   carXY <- c(startPosX, startPosY)
