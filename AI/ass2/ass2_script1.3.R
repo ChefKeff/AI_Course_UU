@@ -9,7 +9,7 @@ library("WheresCroc")
 # at a particular waterhole is the product of the density value associated 
 # with these reading values in the three normal distributions associated with 
 # the waterhole. You will need to use the dnorm function to calculate these.
-getNormalizedEmissions = function(readings, probs)  {
+getNormalizedEmissions <- function(readings, probs)  {
   salinity = dnorm(readings[1], probs[["salinity"]][, 1], probs[["salinity"]][, 2], FALSE)
   phosphate = dnorm(readings[2], probs[["phosphate"]][, 1], probs[["phosphate"]][, 2], FALSE)
   nitrogen = dnorm(readings[3], probs[["nitrogen"]][, 1], probs[["nitrogen"]][, 2], FALSE)
@@ -23,7 +23,7 @@ getNormalizedEmissions = function(readings, probs)  {
 }
 
 # Tar en vektor som input och returnerar den normaliserade vektorn
-normalize = function(v) {
+normalize <- function(v) {
   sum = sum(v)
   for (i in 1:length(v)) {
     v[i] = v[i] / sum
@@ -32,9 +32,72 @@ normalize = function(v) {
 }
 
 # Returns the probability for Croc transition to any adjacent node (or staying) given being in a specific node.
-getTransitionProb = function(edges, node) {
+getTransitionProb <- function(edges, node) {
   reachableNodes = getOptions(node, edges)
   return (1/length(reachableNodes))
+}
+
+# Kollar om en turist dog denna rundan, tar en positions[[1]] som input (alt positions[[2]])
+checkDiedTourist <- function(tourist) {
+  if(!is.na(tourist) && tourist < 0) {
+    return(TRUE)
+  }
+  else {
+    return(FALSE)
+  }
+}
+
+getStateProb <- function(currProbs, node, edges, emissions){
+  reachableNodes = getOptions(node, edges)
+  stateProb = 0
+  for(i in 1:length(reachableNodes)){
+    stateProb = stateProb + currProbs[i] * getTransitionProb(edges, i)
+  }
+  newStateProb = stateProb * emissons[node]
+  return(newStateProb)
+}
+
+forwardHiddenMarkov <- function(currProbs, probs, readings, edges, tourist1, tourist2, ranger){
+  stateProbs = replicate(40, 0)
+  
+  if(checkDiedTourist(tourist1)) {
+    stateProbs[[(-1 * tourist1)]] = 1
+    return(normalize(stateProbs))
+  } 
+  if(checkDiedTourist(tourist2)) {
+    stateProbs[[(-1 * tourist2)]] = 1
+    return(normalize(stateProbs))
+  } 
+  
+  emissions = getNormalizedEmissions(readings, probs)
+  for(i in 1:length(stateProbs)){
+    if(i != tourist1 && i != tourist2 && i != ranger){
+      stateProbs[i] = getStateProb(currProbs, i, edges, emissions)
+    }
+  }
+  
+  return(normalize(stateProbs))
+}
+
+initializeProbabilities <- function(tourist1, tourist2, ranger){
+  stateProbs = replicate(40, 0)
+  denominator = 0
+  if(checkDiedTourist(tourist1)) {
+    stateProbs[[(-1 * tourist1)]] = 1
+    return(nodeProbs)
+  } 
+  if(checkDiedTourist(tourist2)) {
+    stateProbs[[(-1 * tourist2)]] = 1
+    return(nodeProbs)
+  } 
+  for(i in 1:length(stateProbs)){
+    if(i != tourist1 && i != tourist2 && i != ranger) {
+          stateProbs[[i]] = 1
+          denominator = denominator + 1
+    }
+  }
+  stateProbs = stateProbs / denominator
+  return(stateProbs)
 }
 
 makeMoves <- function(moveInfo, readings, positions, edges, probs) {
@@ -62,23 +125,34 @@ makeMoves <- function(moveInfo, readings, positions, edges, probs) {
   # Idé: Kolla alla ponds och se vad Croc visar för värden - jämför med alla olika ponds som finns.
   # Kolla sen sannolikheten att Croc befinner sig i varje pond.
   # Måste behålla förra stegets info för att kunna undersöka nästa steg.
- # print("MOVEINFO")
-#  print(moveInfo)
-#  print("READINGS")
- # print(readings)
-#  print("POSITIONS")
- # print(positions)
-#  print("EDGES")
- # print(edges)
-#  print("PROBS")
- # print(probs)
+  # print("MOVEINFO")
+  #  print(moveInfo)
+  #  print("READINGS")
+  # print(readings)
+  #  print("POSITIONS")
+  # print(positions)
+  #  print("EDGES")
+  # print(edges)
+  #  print("PROBS")
+  # print(probs)
   
-  transitionProb = getTransitionProb()
-  emissionVector = getNormalizedEmissions(readings, probs)
-  print("transitionprob")
-  print(transitionProb)
-  print("emissionvector")
-  print(emissionVector)
+  tourist1 = positions[[1]]
+  tourist2 = positions[[2]]
+  ranger = positions[[3]]
+  
+  if(moveInfo$mem$status == 0 || moveInfo$mem$status == 1){
+    moveInfo$mem$stateProbs <- initializeProbabilities(tourist1, tourist2, ranger) 
+  }
+  
+  currProbs = moveInfo$mem$stateProbs
+  newProbs <- forwardHiddenMarkov(currProbs, probs, readings, edges, tourist1, tourist2, ranger)
+  goalNode = max(newProbs)
+  print(newProbs)
+  print(goalNode)
+  
+  print(moveInfo)
+
+
   
   # Gör forward algorithm för att få fram sannolikheten att Croc är i alla noder
   # Transition probs från de noderna
