@@ -53,7 +53,7 @@ getStateProb <- function(currProbs, node, edges, emissions){
   for(i in 1:length(reachableNodes)){
     stateProb = stateProb + currProbs[i] * getTransitionProb(edges, i)
   }
-  newStateProb = stateProb * emissons[node]
+  newStateProb = stateProb * emissions[node]
   return(newStateProb)
 }
 
@@ -92,12 +92,47 @@ initializeProbabilities <- function(tourist1, tourist2, ranger){
   } 
   for(i in 1:length(stateProbs)){
     if(i != tourist1 && i != tourist2 && i != ranger) {
-          stateProbs[[i]] = 1
-          denominator = denominator + 1
+      stateProbs[[i]] = 1
+      denominator = denominator + 1
     }
   }
   stateProbs = stateProbs / denominator
   return(stateProbs)
+}
+
+breadthFirstSearch <- function(goalNode, ranger, edges) {
+  q = c(ranger)
+  distances = replicate(40, 0)
+  isNodeVisited = rep(FALSE, 40)
+  isNodeVisited[ranger] = TRUE
+  visitedNodes = replicate(40, NULL)
+  while(length(q) > 0) {
+    node = q[1]
+    q = q[-1]
+    reachableNodes = getOptions(node, edges)
+    for (reachableNode in reachableNodes) {
+      if (reachableNode == goalNode) {
+        path = getGoalPath(visitedNodes, ranger, goalNode)
+      }
+      if (!isNodeVisited[reachableNode]) {
+        q = append(q, reachableNode)
+        isNodeVisited[reachableNode] = TRUE
+        distances[reachableNode] = distances[node] + 1
+        visitedNodes[reachableNode] = node
+      }
+    }
+  }
+  return (path)
+}
+
+getGoalPath <- function(visitedNodes, start, end) {
+  path = c()
+  at = end
+  while(!is.null(at)) {
+    path = c(path, visitedNodes[[at]])
+    at = visitedNodes[[at]]
+  }
+  return (rev(path)[2:length(path)])
 }
 
 makeMoves <- function(moveInfo, readings, positions, edges, probs) {
@@ -125,16 +160,7 @@ makeMoves <- function(moveInfo, readings, positions, edges, probs) {
   # Idé: Kolla alla ponds och se vad Croc visar för värden - jämför med alla olika ponds som finns.
   # Kolla sen sannolikheten att Croc befinner sig i varje pond.
   # Måste behålla förra stegets info för att kunna undersöka nästa steg.
-  # print("MOVEINFO")
-  #  print(moveInfo)
-  #  print("READINGS")
-  # print(readings)
-  #  print("POSITIONS")
-  # print(positions)
-  #  print("EDGES")
-  # print(edges)
-  #  print("PROBS")
-  # print(probs)
+
   
   tourist1 = positions[[1]]
   tourist2 = positions[[2]]
@@ -146,13 +172,27 @@ makeMoves <- function(moveInfo, readings, positions, edges, probs) {
   
   currProbs = moveInfo$mem$stateProbs
   newProbs <- forwardHiddenMarkov(currProbs, probs, readings, edges, tourist1, tourist2, ranger)
-  goalNode = max(newProbs)
-  print(newProbs)
-  print(goalNode)
+  goalNode = which.max(newProbs)
+
+  if (goalNode %in% getOptions(ranger, edges)) {
+    moveInfo$moves = c(goal, 0)
+  }
   
-  print(moveInfo)
-
-
+  # Antal noder MELLAN oss och Croc
+  pathToGoal = breadthFirstSearch(goalNode, ranger, edges)
+  
+  # Finns ingen chans att vi kommer stöta på Croc i nästa steg, dvs, ingen mening att söka med 0
+  if (length(pathToGoal) > 1) {
+    moveInfo$moves = c(pathToGoal[[1]], pathToGoal[[2]])
+  }
+  # Kan stöta på i nästa steg
+  else if (length(pathToGoal) == 1) {
+    
+  }
+  
+  print("path")
+  print(pathToGoal)
+  
   
   # Gör forward algorithm för att få fram sannolikheten att Croc är i alla noder
   # Transition probs från de noderna
