@@ -3,6 +3,8 @@
 # Equal or surpass par performance
 # Meet the execution time requirement
 
+# OBS SOME NEW IF-STATEMENTS IN THE FINAL SUBMITTED VERSION! :)
+
 library("WheresCroc")
 
 # The probability that you get particular sensor readings given Croc is 
