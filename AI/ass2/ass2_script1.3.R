@@ -17,12 +17,12 @@ normalize <- function(v) {
   }
   return (v)
 }
-getNeighbors <- function(point,edges) {
+getReachableNodes <- function(point,edges) {
   c(edges[which(edges[,1] == point), 2], edges[which(edges[,2] == point), 1], point)
 }
 getTransitionProb <- function(edges, node) {
   reachableNodes = getReachableNodes(node, edges)
-  return (1/length(reachableNodes))
+  return(1/length(reachableNodes))
 }
 checkDiedTourist <- function(tourist) {
   if(!is.na(tourist) && tourist < 0) {
@@ -34,12 +34,11 @@ checkDiedTourist <- function(tourist) {
 }
 getStateProb <- function(currProbs, node, edges, emissions){
   reachableNodes = getReachableNodes(node, edges)
-  stateProb = 0
+  stateProb = 1
   for(rNode in reachableNodes){
-    stateProb = stateProb + currProbs[rNode] * getTransitionProb(edges, rNode)
+    stateProb = stateProb + currProbs[rNode] * getTransitionProb(edges, rNode) * emissions[node]
   }
-  newStateProb = stateProb * emissions[node]
-  return(newStateProb)
+  return(stateProb)
 }
 forwardHiddenMarkov <- function(currProbs, probs, readings, edges, tourist1, tourist2, ranger){
   stateProbs = replicate(40, 0)
@@ -58,7 +57,7 @@ forwardHiddenMarkov <- function(currProbs, probs, readings, edges, tourist1, tou
         stateProbs[i] = getStateProb(currProbs, i, edges, emissions)
       }
     } else {
-        stateProbs[i] = getStateProb(currProbs, i, edges, emissions)
+      stateProbs[i] = getStateProb(currProbs, i, edges, emissions)
     }
   }
   return(normalize(stateProbs))
@@ -153,19 +152,23 @@ findGoalNode <- function(currProbs, newProbs, edges){
   }
   return(goalNode)
 }
-
 myFunction <- function(moveInfo, readings, positions, edges, probs) {
   tourist1 = positions[[1]]
   tourist2 = positions[[2]]
   ranger = positions[[3]]
+  print('ranger')
+  print(ranger)
   if(moveInfo$mem$status == 0 || moveInfo$mem$status == 1){
     moveInfo$mem$stateProbs <- initializeProbabilities(tourist1, tourist2, ranger) 
   }
   currProbs = moveInfo$mem$stateProbs
   newProbs <- forwardHiddenMarkov(currProbs, probs, readings, edges, tourist1, tourist2, ranger)
   goalNode <- findGoalNode(currProbs, newProbs, edges)
-  for(i in getReachableNodes(ranger,edges)){
+  print('goal node')
+  print(goalNode)
+  for(i in getReachableNodes(ranger, edges)){
     if(i == goalNode){
+      print('nu tror den goal node är granne')
       moveInfo$moves = c(goalNode, 0)
       moveInfo$mem$stateProbs = newProbs
       moveInfo$mem$status = 2
