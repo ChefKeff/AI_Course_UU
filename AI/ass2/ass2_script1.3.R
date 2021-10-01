@@ -110,7 +110,7 @@ breadthFirstSearch <- function(goalNode, ranger, edges) {
     }
   }
   at = goalNode
-  path = numeric()
+  path = c()
   while (at != -1) {
     if (parents[at] != -1) {
       path = c(c(at), path)
