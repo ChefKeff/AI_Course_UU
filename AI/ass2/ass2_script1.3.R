@@ -34,7 +34,7 @@ checkDiedTourist <- function(tourist) {
 }
 getStateProb <- function(currProbs, node, edges, emissions){
   reachableNodes = getReachableNodes(node, edges)
-  stateProb = 1
+  stateProb = 0
   for(rNode in reachableNodes){
     stateProb = stateProb + currProbs[rNode] * getTransitionProb(edges, rNode) * emissions[node]
   }
@@ -56,7 +56,14 @@ forwardHiddenMarkov <- function(currProbs, probs, readings, edges, tourist1, tou
       if(i != tourist1 && i != tourist2 && i != ranger){
         stateProbs[i] = getStateProb(currProbs, i, edges, emissions)
       }
+    } else if(is.na(tourist1) && !is.na(tourist2)){
+      if(i != tourist2 && i != ranger){}
+      stateProbs[i] = getStateProb(currProbs, i, edges, emissions)
+    } else if(!is.na(tourist1) && is.na(tourist2)){
+      if(i != tourist1 && i != ranger){}
+      stateProbs[i] = getStateProb(currProbs, i, edges, emissions)
     } else {
+      if(i != ranger){}
       stateProbs[i] = getStateProb(currProbs, i, edges, emissions)
     }
   }
@@ -86,92 +93,46 @@ initializeProbabilities <- function(tourist1, tourist2, ranger){
 }
 breadthFirstSearch <- function(goalNode, ranger, edges) {
   q = c(ranger)
-  distances = replicate(40, 0)
   isNodeVisited = rep(FALSE, 40)
   isNodeVisited[ranger] = TRUE
-  visitedNodes = replicate(40, NULL)
+  parents = replicate(40, 0)
+  parents[[ranger]] = -1
   while(length(q) > 0) {
     node = q[1]
     q = q[-1]
     reachableNodes = getReachableNodes(node, edges)
     for (reachableNode in reachableNodes) {
-      if (reachableNode == goalNode) {
-        path = getGoalPath(visitedNodes, ranger, goalNode)
-      }
       if (!isNodeVisited[reachableNode]) {
         q = append(q, reachableNode)
         isNodeVisited[reachableNode] = TRUE
-        distances[reachableNode] = distances[node] + 1
-        visitedNodes[reachableNode] = node
+        parents[reachableNode] = node
       }
     }
+  }
+  at = goalNode
+  path = numeric()
+  while (at != -1) {
+    if (parents[at] != -1) {
+      path = c(c(at), path)
+    }
+    at = parents[at]
   }
   return (path)
-}
-getGoalPath <- function(visitedNodes, start, end) {
-  path = c()
-  at = end
-  while(!is.null(at)) {
-    path = c(path, visitedNodes[[at]])
-    at = visitedNodes[[at]]
-  }
-  return (rev(path)[2:length(path)])
-}
-findGoalNode <- function(currProbs, newProbs, edges){
-  newerProbs = newProbs 
-  goalNode = -1
-  sumProb = 0
-  if(max(newerProbs) == 1) {
-    return(which.max(newerProbs))
-  }
-  for(i in 1:length(newerProbs)){
-    goalProb = max(newerProbs)
-    newGoalNode = which.max(newerProbs)
-    reachableNodes = getReachableNodes(newGoalNode, edges)
-    rNodeProbs = c(1:length(reachableNodes))
-    maxNeighborsNeighbors = 0
-    for(i in 1:length(reachableNodes)){
-      if(reachableNodes[i] != goalNode){
-        reachReachableNodes = getReachableNodes(reachableNodes[[i]], edges)
-        rNodeNode = c(1:length(reachReachableNodes))
-        for(j in 1:length(reachReachableNodes)){
-          rNodeNode[[j]] = currProbs[[reachReachableNodes[j]]]
-          if(rNodeNode[[j]] > maxNeighborsNeighbors) {
-            maxNeighborsNeighbors = rNodeNode[[j]]
-          }
-        }
-        rNodeProbs[[i]] = currProbs[[reachableNodes[i]]]
-      }
-    }
-    newSumProb = goalProb + 0.4*mean(rNodeProbs) + 0.3*maxNeighborsNeighbors
-    if(newSumProb > sumProb) {
-      sumProb = newSumProb
-      goalNode = newGoalNode
-    }
-    newerProbs[[newGoalNode]] = 0
-  }
-  return(goalNode)
 }
 myFunction <- function(moveInfo, readings, positions, edges, probs) {
   tourist1 = positions[[1]]
   tourist2 = positions[[2]]
   ranger = positions[[3]]
-  print('ranger')
-  print(ranger)
   if(moveInfo$mem$status == 0 || moveInfo$mem$status == 1){
     moveInfo$mem$stateProbs <- initializeProbabilities(tourist1, tourist2, ranger) 
   }
   currProbs = moveInfo$mem$stateProbs
   newProbs <- forwardHiddenMarkov(currProbs, probs, readings, edges, tourist1, tourist2, ranger)
-  goalNode <- findGoalNode(currProbs, newProbs, edges)
-  print('goal node')
-  print(goalNode)
+  goalNode <- which.max(newProbs)
   for(i in getReachableNodes(ranger, edges)){
     if(i == goalNode){
-      print('nu tror den goal node är granne')
       moveInfo$moves = c(goalNode, 0)
       moveInfo$mem$stateProbs = newProbs
-      moveInfo$mem$status = 2
       return(moveInfo)
     }
   }
