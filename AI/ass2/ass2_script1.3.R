@@ -1,4 +1,5 @@
 library("WheresCroc")
+# PASSED!
 getNormalizedEmissions <- function(readings, probs)  {
   salinity = dnorm(readings[1], probs[["salinity"]][, 1], probs[["salinity"]][, 2], FALSE)
   phosphate = dnorm(readings[2], probs[["phosphate"]][, 1], probs[["phosphate"]][, 2], FALSE)
